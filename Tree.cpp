@@ -14,6 +14,111 @@ Tree::~Tree() {
   head = NULL;
 }
 
+void Tree::deleteNode(int number) {
+  Node* remove = findDelete(number, head);
+  if (remove == NULL) {
+    cout << "No node with that number" << endl;
+    return;
+  }
+  if (remove == head && remove->left == NULL && remove->right == NULL) {
+    head = NULL;
+    return;
+  }
+  //get replaceNode
+  Node* replaceNode = remove->right;
+  if (remove->right == NULL) {
+    replaceNode = remove->left;
+    if (replaceNode != NULL) {
+      while (replaceNode->right != NULL) {
+	replaceNode = replaceNode->right;
+      }
+    }
+  }
+  else {
+    while (replaceNode->left != NULL) {
+      replaceNode = replaceNode->left;
+    }
+  }
+  if (replaceNode == NULL) {
+    //just delete remove (remove left and right are NULL)
+    if (remove->left != NULL) {
+      if (remove->parent->right == remove) {
+	remove->parent->right = remove->left;
+      }
+      else {
+	remove->parent->left = remove->left;
+      }
+      remove->left->parent = remove->parent;
+      changeColor(remove->left);
+    }
+    else {
+      if (remove->parent->left == remove) {
+	remove->parent->left = NULL;
+      }
+      else {
+	remove->parent->right = NULL;
+      }
+    }
+  }
+  else {
+    remove->number = replaceNode->number;
+    //delete replaceNode
+    if (replaceNode->right != NULL) {
+      if (replaceNode->parent->right == replaceNode) {
+	replaceNode->parent->right = replaceNode->right;
+      }
+      else {
+	replaceNode->parent->left = replaceNode->right;
+      }
+      replaceNode->right->parent = replaceNode->parent;
+      changeColor(replaceNode->right);
+    }
+    else if (replaceNode->left != NULL) {
+      if (replaceNode->parent->right == replaceNode) {
+	replaceNode->parent->right = replaceNode->left;
+      }
+      else {
+	replaceNode->parent->left = replaceNode->left;
+      }
+      replaceNode->left->parent = replaceNode->parent;
+      changeColor(replaceNode->left);
+    }
+    else {
+      if (replaceNode->parent->right == replaceNode) {
+	replaceNode->parent->right = NULL;
+      }
+      else {
+	replaceNode->parent->left = NULL;
+      }
+    }
+  }
+  //traverse through tree and balance
+}
+
+Node* Tree::findDelete(int number, Node* current) {
+  if (current->number == number) {
+    return current;
+  }
+  if (current->number > number) {
+    if (current->left == NULL) {
+      return NULL;
+    }
+    Node* returnNode = findDelete(number, current->left);
+    return returnNode;
+  }
+  if (current->number < number) {
+    if (current->right == NULL) {
+      return NULL;
+    }
+    Node* returnNode = findDelete(number, current->right);
+    return returnNode;
+  }
+ 
+}
+
+
+
+
 void Tree::insert(Node* newNode) {
   //if head empty, fill head and set to black, then return
   if (head == NULL) {
@@ -51,6 +156,10 @@ void Tree::insert(Node* newNode) {
 }
 
 void Tree::balance(Node* currentNode) {
+  if (currentNode == head && currentNode->color == 0) {
+    currentNode->color = 1;
+    return;
+  }
   Node* insertNode = currentNode;
   //get uncle
   Node* uncle = NULL;
@@ -155,30 +264,48 @@ void Tree::balance(Node* currentNode) {
     grandparent->color = parentColor;
     currentNode->color = grandparent->color;
   }
+  //get uncle
+  uncle = NULL;
+  if (currentNode->parent == head) {
+    return;
+  }
+  if (currentNode->parent->parent->left == currentNode->parent) {
+    uncle = currentNode->parent->parent->right;
+  }
+  else {
+    uncle = currentNode->parent->parent->left; 
+  }
+  //get grandparent
+  grandparent = currentNode->parent->parent;
+  
   //Case 3
   //if parent and uncle are red
   if (uncle != NULL) {
   if (currentNode->parent->color == 0 && uncle->color == 0) {
-  
-    
-    if (grandparent->parent != NULL) {
-      if (grandparent->parent->color == 0) {
-	currentNode->color = 1;
-      }
-    }
-    if (currentNode->color != 1) {
-    uncle->color = 1;
     currentNode->parent->color = 1;
-    //set grandparent to red
+    uncle->color = 1;
+    currentNode->color = 0;
     grandparent->color = 0;
-    if (grandparent == head) {
-      
-      grandparent->color = 1;
-    }
-    }
-    
+    balance(grandparent);
   }
   }
+  //get new uncle
+//get uncle
+  uncle = NULL;
+  if (currentNode->parent == head) {
+    return;
+  }
+  if (currentNode->parent->parent->left == currentNode->parent) {
+    uncle = currentNode->parent->parent->right;
+  }
+  else {
+    uncle = currentNode->parent->parent->left; 
+  }
+  //get grandparent
+  grandparent = currentNode->parent->parent;
+  
+
+  
   //Case 4
   //if the parent is red and the uncle is black
 
@@ -187,8 +314,13 @@ void Tree::balance(Node* currentNode) {
   
     //if parent on left side
     if (currentNode->parent->parent->left == currentNode->parent) {
+      
       //move node to outside
       if (currentNode->parent->left != currentNode) {
+	//get nodes 1 2 and 3
+	Node* one = currentNode->parent->left;
+	Node* two = currentNode->left;
+	Node* three = currentNode->right;
 	//SWITCH PARENT AND CURRENT NODE
 	grandparent->left = currentNode;
 	currentNode->parent->parent = currentNode;
@@ -197,13 +329,22 @@ void Tree::balance(Node* currentNode) {
 	//get parent before resetting current node's parent
 	Node* Parent = currentNode->parent;
 	currentNode->parent = grandparent;
-	//recolor
-	int swapColor = currentNode->color;
-	currentNode->color = Parent->color;
-	Parent->color = swapColor;
+	
 	//reset currentNode
 	currentNode = Parent;
+	//re place one two and three nodes
 	
+	currentNode->parent->right = three;
+	three->parent = currentNode->parent;
+	currentNode->right = two;
+	two->parent = currentNode;
+	currentNode->left = one;
+	one->parent = currentNode;
+	
+      }
+      Node* removedNode = NULL;
+      if (currentNode->parent->right != NULL) {
+	removedNode = currentNode->parent->right;
       }
       //set parent to grandparent
       //set grandparent's parent's child to parent
@@ -227,30 +368,47 @@ void Tree::balance(Node* currentNode) {
       currentNode->parent->right = grandparent;
       //set gparent's left to NULL
       grandparent->left = NULL;
+      if (removedNode != NULL) {
+	grandparent->left = removedNode;
+	removedNode->parent = grandparent;
+      }
     }
     //if parent on right side
     else {
       //move node to outside
       if (currentNode->parent->right != currentNode) {
+	//get one two and three nodes
+	Node* one = currentNode->parent->right;
+	Node* two = currentNode->right;
+	Node* three = currentNode->left;
 	//SWITCH PARENT AND CURRENT NODE
 	grandparent->right = currentNode;
+	
 	currentNode->parent->parent = currentNode;
 	currentNode->right = currentNode->parent;
+	
 	currentNode->parent->left = NULL;
 	//get parent before resetting currentNode's parent
 	Node* Parent = currentNode->parent;
 	currentNode->parent = grandparent;
-	//recolor
-	int swapColor = currentNode->color;
-	currentNode->color = Parent->color;
-	Parent->color = swapColor;
 	//reset current node
 	currentNode = Parent;
+	//place one two and three nodes
+	currentNode->left = two;
+	currentNode->right = one;
+	currentNode->parent->left = three;
+	two->parent = currentNode;
+	one->parent = currentNode;
+	three->parent = currentNode->parent;
+      }
+      Node* removedNode = NULL;
+      if (currentNode->parent->left != NULL) {
+	removedNode = currentNode->parent->left;
       }
       //set parent to grandparent
       //set grandparent's parent's child to parent
       if (grandparent->parent != NULL) {
-	if (grandparent->parent->left = grandparent) {
+	if (grandparent->parent->left == grandparent) {
 	  grandparent->parent->left = currentNode->parent;
 	}
 	else {
@@ -268,13 +426,24 @@ void Tree::balance(Node* currentNode) {
       currentNode->parent->left = grandparent;
       //set gparent's right to NULL
       grandparent->right = NULL;
+      if (removedNode != NULL) {
+	grandparent->right = removedNode;
+	removedNode->parent = grandparent;
+      }
     }
-    //recolor
-    currentNode->parent->color = 1;
-    grandparent->color = 0;
+    
+      //recolor
+      currentNode->parent->color = 1;
+      grandparent->color = 0;
+      if (grandparent->left->color == 0) {
+	changeColor(grandparent->left);
+      }
+      if (grandparent->right->color == 0) {
+	changeColor(grandparent->right);
+      }
+    }
   }
-  }
-
+  
   //count black nodes on each side
   int rightBlacks;
   if (head == NULL) {
@@ -302,7 +471,7 @@ void Tree::balance(Node* currentNode) {
     int even = checkEven(head, insertNode);
     if (even == 0 && insertNode->color == 1) {
       //cout << "Even: " << endl;
-      //display(head,1);
+      
       //find inserted left or right
       Node* findHead = insertNode;
       while (findHead->parent != head) {
@@ -316,6 +485,7 @@ void Tree::balance(Node* currentNode) {
       }
       return;
     }
+ 
     //CHECK EVEN ONE SIDE
     //CHECK THAT RIGHT AND LEFT SIDE ARE BALANCED
   if (leftBlacks > rightBlacks) {
@@ -379,7 +549,7 @@ void Tree::balance(Node* currentNode) {
     }
     Node* headNode = head;
     head = replaceNode;
-    //display(head, 1);
+    
     //BALANCE LEFT SIDE, SHIFT ALL NODES UP
     Node* current = head->left;
     while (current->right == NULL) {
@@ -432,11 +602,12 @@ void Tree::balance(Node* currentNode) {
 	break;
       }
       current = replaceNode2->left;
-      //display(head,1);
+      
     }
     balance(headNode);
 
   }
+
   if (rightBlacks > leftBlacks) {
     //shift to left side
     //shift to right side
@@ -445,7 +616,7 @@ void Tree::balance(Node* currentNode) {
     while (replaceNode->left != NULL) {
       replaceNode = replaceNode->left;
     }
-    //remove parent replationship
+    //remove parent relationship
     replaceNode->parent->left = NULL;
     //if replacenode has a right node, move it up
     if (replaceNode->right != NULL) {
@@ -497,7 +668,7 @@ void Tree::balance(Node* currentNode) {
     head->color = 0;
     Node* headNode = head;
     head = replaceNode;
-    //display(head, 1);
+    
     //SHIFT ALL RIGHT NODES UP
     Node* current = head->right;
     while (current->left == NULL) {
@@ -550,10 +721,14 @@ void Tree::balance(Node* currentNode) {
 	break;
       }
       current = replaceNode2->right;
-      //display(head,1);
+      
     }
     balance(headNode);
+    
+    
   }
+
+  /*
   //traverse through tree and fix balance points
   bool traversing = true;
   while (traversing == true) {
@@ -576,38 +751,26 @@ void Tree::balance(Node* currentNode) {
       changeColor(getSide); 
     }
     }*/
-  //check for need for color change
-  int checkChange = needChange(head);
-  if (checkChange == 1) {
+  //check left blacks and right blacks for color change
+  /*cout << "here1" << endl;
+  cout << currentNode->number << endl;
+  int rightB = countBlacks(head->right, 0);
+  int leftB = countBlacks(head->left, 0);
+  if (rightB > leftB) {
     changeColor(head->right);
   }
-  if (checkChange == 2) {
+  if (leftB > rightB) {
     changeColor(head->left);
   }
-  checkChange = needChange(head);
-  if (checkChange == 1) {
-    changeColor(head->right);
-  }
-  if (checkChange == 2) {
-    changeColor(head->left);
-  }
-  if (currentNode->left == NULL && currentNode->right == NULL) {
-    if (currentNode->color == 1 && (currentNode->parent->right == NULL || currentNode->parent->left == NULL)) {
-      Node* getSide = currentNode;
-      while (getSide->parent != head) {
-	getSide = getSide->parent;
-      }
-      if (getSide->parent->left == getSide) {
-	changeColor(head->left);
-      }
-      else {
-	changeColor(head->right);
-      }
-    }
-  }
-  //rotate tree if one side is 2x height
+  cout << "here2" << endl;
+  display(head,0);
+  int checkChange = 0;
+  //rotate tree if one side is has more blacks
   Node* rotateNode = findRotation(head);
-  while (rotateNode != NULL) {  
+  while (rotateNode != NULL) {
+    cout << "rotation" << endl;
+    //balance the bottom nodes
+    balanceBottom(head);
     if (rotateNode != NULL) {
       fixReds(head);
     checkChange = needChange(head);
@@ -639,6 +802,28 @@ void Tree::balance(Node* currentNode) {
       }
     }
   }
+  cout << "here3" << endl;
+  display(head,0);
+  //check left blacks and right blacks for color change
+  rightB = countBlacks(head->right, 0);
+  leftB = countBlacks(head->left, 0);
+  if (rightB > leftB) {
+    if (rightB-1 == leftB && head->left->color == 1) {
+      
+    }
+    else {
+    changeColor(head->right);
+    }
+  }
+  if (leftB > rightB) {
+    if (leftB-1 == rightB && head->right->color == 1) {
+
+    }
+    else {
+      changeColor(head->left);
+    }
+  }
+  cout << "here4" << endl;
   //check for need for color change
   checkChange = needChange(head);
   if (checkChange == 1) {
@@ -660,8 +845,8 @@ void Tree::balance(Node* currentNode) {
   }
   if (checkChange == 2) {
     changeColor(head->left);
-  }
-  if (currentNode->left == NULL && currentNode->right == NULL) {
+    }*/
+  /*if (currentNode->left == NULL && currentNode->right == NULL) {
     if (currentNode->color == 1 && (currentNode->parent->right == NULL || currentNode->parent->left == NULL)) {
       Node* getSide = currentNode;
       while (getSide->parent != head) {
@@ -676,10 +861,27 @@ void Tree::balance(Node* currentNode) {
     }
   }
   fixReds(head);
-  //check for two reds in a row
+  //if height is two times great somewhere
+  //rotate tree
+
+  */
   
   //fix(head);
 }
+
+void Tree::balanceBottom(Node* current) {
+  if (current->left == NULL && current->right == NULL) {
+    balance(current);
+  }
+  if (current->left != NULL) {
+    balanceBottom(current->left);
+  }
+  if (current->right != NULL) {
+    balanceBottom(current->right);
+  }
+}
+
+
 
 Node* Tree::findRotation(Node* current) {
  if (current->right != NULL) {
@@ -1048,12 +1250,11 @@ void Tree::display(Node* printNode, int height) {
   for (int i = 0; i < height; i++) {
     cout << "\t";
   }
-  cout << printNode->number << ", ";
   if (printNode->color == 0) {
-    cout << "R" << endl;
+    cout << "\u001b[31;1m" << printNode->number << ", R\033[0m" << endl;
   }
   else {
-    cout << "B" << endl;
+    cout << "\u001b[34;1m" << printNode->number << ", B\033[0m" << endl;
   }
   if (printNode->left != NULL) {
     int newHeight = height+1;

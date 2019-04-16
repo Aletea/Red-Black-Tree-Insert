@@ -9,6 +9,9 @@ class Tree {
  public:
   Tree();
   ~Tree();
+  void balanceBottom(Node* current);
+  void deleteNode(int number);
+  Node* findDelete(int number, Node* current);
   void insert(Node* newNode);
   void balance(Node* currentNode);
   int countBlacks(Node* root, int height);
@@ -17,7 +20,9 @@ class Tree {
   int checkEven(Node* current, Node* insert);
   void changeColor(Node* top);
   Node* traverse(Node* current);
-  //int needChange(Node* current);
+  Node* findRotation(Node* current);
+  int needChange(Node* current);
+  void fixReds(Node* current);
   //void fix(Node* current);
   
  private:

@@ -11,11 +11,11 @@ int main() {
   Tree* RB = new Tree();
   while (stillGoing == true) {
     //ask read, add, print, or quit
-    cout << "Would you like to read, add, print, or quit?" << endl;
+    cout << "Would you like to read, add, delete, print, or quit?" << endl;
     char input[20];
     cin.get(input,20);
     cin.get();
-    while (strcmp(input, "read") != 0 && strcmp(input, "add") != 0 && strcmp(input, "print") != 0 && strcmp(input, "quit") != 0) {
+    while (strcmp(input, "read") != 0 && strcmp(input, "add") != 0 && strcmp(input, "print") != 0 && strcmp(input, "quit") != 0 && strcmp(input, "delete") != 0) {
       cout << "Improper input. Please type 'read', 'add', 'print', or 'quit'" << endl;
       cin.get(input,20);
       cin.get();
@@ -62,6 +62,7 @@ int main() {
 	  i++;
 	}
       }
+      
     }
     //make new node and insert
     else if (strcmp(input, "add") == 0) {
@@ -72,6 +73,13 @@ int main() {
       Node* newNode = new Node();
       newNode->number = num;
       RB->insert(newNode);
+    }
+    else if (strcmp(input, "delete") == 0) {
+      cout << "Enter number you are going to delete." << endl;
+      int num;
+      cin >> num;
+      cin.ignore();
+      RB->deleteNode(num);
     }
     else if (strcmp(input, "print") == 0) {
       if (RB->getHead() == NULL) {
